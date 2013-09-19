@@ -156,7 +156,7 @@ public class PlugInScopeObjectManager {
 
     public ImageIcon createImageIcon(String imgFileName)
     {
-        String urlName = "org/reactome/cytoscape/" + imgFileName;
+        String urlName = "org/reactome/cytoscape3/" + imgFileName;
         URL url = getClass().getClassLoader().getResource(urlName);
         ImageIcon icon = null;
         if (url == null)
