@@ -6,7 +6,6 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Container;
 import java.awt.Graphics;
-import java.awt.MenuComponent;
 import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -18,23 +17,11 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 
-import javax.swing.Box;
-import javax.swing.Icon;
-import javax.swing.JButton;
-import javax.swing.JCheckBox;
-import javax.swing.JMenuItem;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JPopupMenu;
-import javax.swing.JScrollPane;
-import javax.swing.JTable;
-import javax.swing.JToolBar;
-import javax.swing.ListSelectionModel;
+import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.table.AbstractTableModel;
@@ -45,8 +32,12 @@ import org.cytoscape.application.swing.CytoPanel;
 import org.cytoscape.application.swing.CytoPanelComponent;
 import org.cytoscape.application.swing.CytoPanelName;
 import org.cytoscape.model.CyEdge;
+import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyNode;
 import org.cytoscape.model.CyTable;
+import org.cytoscape.model.CyTableUtil;
+import org.cytoscape.model.events.RowsSetEvent;
+import org.cytoscape.model.events.RowsSetListener;
 import org.cytoscape.util.swing.FileChooserFilter;
 import org.cytoscape.util.swing.FileUtil;
 import org.cytoscape.view.model.CyNetworkView;
@@ -54,13 +45,14 @@ import org.cytoscape.view.model.View;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
 import org.osgi.framework.ServiceRegistration;
+import org.reactome.cytoscape.util.PlugInUtilities;
 import org.reactome.r3.util.FileUtility;
 import org.reactome.r3.util.InteractionUtilities;
 
 
 @SuppressWarnings("serial")
 public abstract class NetworkModulePanel extends JPanel implements
-        CytoPanelComponent
+        CytoPanelComponent, RowsSetListener
 {
     private String title = "";
     // Used to control view
@@ -105,13 +97,36 @@ public abstract class NetworkModulePanel extends JPanel implements
     
     public void setNetworkView(CyNetworkView view)
     {
-        //Remove the current view selection listener TODO
         this.view = view;
-        //TODO add selection listener
     }
+    
+    @Override
+    public void handleEvent(RowsSetEvent event) {
+        if (view == null)
+            return;
+        if (isFromTable) { // Split these two checks for debugging purpose
+            return;
+        }
+        if (!event.containsColumn(CyNetwork.SELECTED)) {
+            return;
+        }
+        CyNetwork network = view.getModel();
+        List<CyNode> selectedNodes = CyTableUtil.getNodesInState(network,
+                                                                 CyNetwork.SELECTED,
+                                                                 true);
+        List<String> nodeIds = new ArrayList<String>();
+        for (CyNode node : selectedNodes) {
+            nodeIds.add(network.getRow(node).get(CyNetwork.NAME, String.class));
+        }
+        selectTableRowsForNodes(nodeIds);
+    }
+
     private void init()
     {
-        // TODO Auto-generated method stub
+        // Register selection listener
+        PlugInScopeObjectManager.getManager().getBundleContext().registerService(RowsSetListener.class.getName(), 
+                                                                                 this, 
+                                                                                 new Properties());
         setLayout(new BorderLayout());
         contentTable = new JTable();
         TableModel moduleModel = createTableModel();
@@ -246,11 +261,10 @@ public abstract class NetworkModulePanel extends JPanel implements
                 setSelectedOrUnselected(nodeView, selectedNodes.contains(nodeName));
             }
         }
-        isFromTable = false;
         view.updateView();
-
-
+        isFromTable = false;
     }
+    
     private void setSelectedOrUnselected(View<CyNode> nodeView, boolean value)
     {
         Long nodeSUID = nodeView.getModel().getSUID();
@@ -468,7 +482,7 @@ public abstract class NetworkModulePanel extends JPanel implements
         return selectedIds;
     }
     
-    protected void selectTableRowsForNodes(List<String> nodes) {
+    private void selectTableRowsForNodes(List<String> nodes) {
         NetworkModuleTableModel model = (NetworkModuleTableModel) contentTable.getModel();
         List<Integer> rows = model.getRowsForNodeIds(nodes);
         // Need to disable table selection to avoid circular calling

@@ -31,23 +31,7 @@ import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
-import javax.swing.BorderFactory;
-import javax.swing.Icon;
-import javax.swing.ImageIcon;
-import javax.swing.JButton;
-import javax.swing.JCheckBox;
-import javax.swing.JDialog;
-import javax.swing.JLabel;
-import javax.swing.JMenuItem;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JPopupMenu;
-import javax.swing.JScrollPane;
-import javax.swing.JTextArea;
-import javax.swing.JTextField;
-import javax.swing.JTree;
-import javax.swing.SwingConstants;
-import javax.swing.SwingUtilities;
+import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.event.TreeSelectionEvent;
@@ -60,6 +44,7 @@ import javax.swing.tree.TreePath;
 
 import org.cytoscape.application.swing.CySwingApplication;
 import org.cytoscape.application.swing.CytoPanel;
+import org.cytoscape.application.swing.CytoPanelComponent;
 import org.cytoscape.application.swing.CytoPanelName;
 import org.cytoscape.model.CyNode;
 import org.cytoscape.model.CyTable;
@@ -70,12 +55,10 @@ import org.gk.util.DialogControlPane;
 import org.gk.util.GKApplicationUtilities;
 import org.gk.util.TreeUtilities;
 import org.osgi.framework.BundleContext;
-import org.osgi.framework.ServiceReference;
 import org.osgi.framework.ServiceRegistration;
 import org.reactome.cancerindex.data.NCIDiseaseHandler;
 import org.reactome.cancerindex.model.DiseaseData;
 import org.reactome.cytoscape.util.NodeUtilitiesImpl;
-import org.cytoscape.application.swing.CytoPanelComponent;
 
 
 
@@ -154,7 +137,9 @@ public class NCICancerIndexDiseaseHelper
                 break;
             }
         }
+        this.codeToDisease = codeToDisease;
     }
+    
     private void buildTree(DefaultMutableTreeNode root, List<DiseaseData> subDiseases) {
         for (DiseaseData disease : subDiseases) {
             DefaultMutableTreeNode subNode = new DefaultMutableTreeNode();
